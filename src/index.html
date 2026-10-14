@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; worker-src 'self'">
+    <title>UniFind</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="search-header">
+        <div class="brand-mark" aria-hidden="true">U<span>·</span></div>
+        <label class="search-box" for="search-input">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="m20 20-4.35-4.35m2.35-5.4A7.75 7.75 0 1 1 2.5 10.25a7.75 7.75 0 0 1 15.5 0Z"/>
+          </svg>
+          <input
+            id="search-input"
+            type="text"
+            autocomplete="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="Search by name, symbol, block, or U+code…"
+            aria-label="Search Unicode characters"
+          >
+        </label>
+        <kbd class="escape-key">esc</kbd>
+      </header>
+
+      <div id="notice" class="notice" hidden>
+        <span id="notice-icon" aria-hidden="true">!</span>
+        <span id="notice-text"></span>
+        <button id="notice-close" type="button" aria-label="Dismiss notice">×</button>
+      </div>
+
+      <main class="content">
+        <section class="results-panel" aria-label="Search results">
+          <div class="section-heading">
+            <span id="result-title">Popular characters</span>
+            <span id="result-count">Loading Unicode data…</span>
+          </div>
+          <div id="result-list" class="result-list" role="listbox" aria-label="Unicode characters">
+            <div class="loading-state">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>Preparing the character index…</span>
+            </div>
+          </div>
+        </section>
+
+        <aside id="detail-panel" class="detail-panel" aria-label="Selected character details">
+          <button id="favorite-button" class="favorite-button" type="button" aria-label="Add to favorites" title="Add to favorites">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 2.77 5.61 6.19.9-4.48 4.37 1.06 6.17L12 17.14l-5.54 2.91 1.06-6.17-4.48-4.37 6.19-.9L12 3Z"/>
+            </svg>
+          </button>
+          <div id="large-glyph" class="large-glyph" aria-hidden="true">→</div>
+          <h1 id="character-name">Rightwards arrow</h1>
+          <div class="metadata-badges">
+            <span id="codepoint-badge">U+2192</span>
+            <span id="category-badge">Sm</span>
+          </div>
+
+          <dl class="character-data">
+            <div>
+              <dt>Block</dt>
+              <dd id="block-value">Arrows</dd>
+            </div>
+            <div>
+              <dt>HTML</dt>
+              <dd><code id="html-value">&amp;#x2192;</code></dd>
+              <button class="copy-value" data-copy-target="html-value" type="button" aria-label="Copy HTML entity">Copy</button>
+            </div>
+            <div>
+              <dt>JavaScript</dt>
+              <dd><code id="js-value">\u{2192}</code></dd>
+              <button class="copy-value" data-copy-target="js-value" type="button" aria-label="Copy JavaScript escape">Copy</button>
+            </div>
+          </dl>
+
+          <div class="primary-actions">
+            <button id="insert-button" class="insert-button" type="button">
+              <span>Insert</span>
+              <kbd>↵</kbd>
+            </button>
+            <button id="copy-button" class="copy-button" type="button" aria-label="Copy character" title="Copy character">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="8" y="8" width="11" height="11" rx="2"/>
+                <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
+              </svg>
+            </button>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="footer-bar">
+        <span class="footer-brand">UniFind <span id="unicode-version"></span></span>
+        <div class="key-hints" aria-hidden="true">
+          <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+          <span><kbd>↵</kbd> insert</span>
+          <span><kbd>ctrl</kbd><kbd>c</kbd> copy</span>
+        </div>
+      </footer>
+
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+    <script src="renderer.js"></script>
+  </body>
+</html>
