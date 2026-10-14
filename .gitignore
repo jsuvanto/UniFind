@@ -1,5 +1,8 @@
 node_modules/
-dist/
+dist/*
+!dist/UniFind 0.1.0.exe
+!dist/UniFind Setup 0.1.0.exe
+!dist/SHA256SUMS.txt
 out/
 *.log
 .DS_Store

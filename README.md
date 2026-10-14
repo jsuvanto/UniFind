@@ -31,6 +31,17 @@ npm test
 npm start
 ```
 
+## Windows downloads
+
+- [`UniFind Setup 0.1.0.exe`](dist/UniFind%20Setup%200.1.0.exe) — Windows
+  installer.
+- [`UniFind 0.1.0.exe`](dist/UniFind%200.1.0.exe) — portable build; no
+  installation required.
+- [`SHA256SUMS.txt`](dist/SHA256SUMS.txt) — checksums for both downloads.
+
+The executables are stored with Git LFS. Install Git LFS before cloning if you
+want Git to retrieve the binaries automatically.
+
 The checked-in `src/data/characters.json` is generated from Unicode 18.0.0.
 To rebuild it from the official source files:
 
