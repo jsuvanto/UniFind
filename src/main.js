@@ -1,7 +1,7 @@
 const path = require('node:path');
-const { spawn } = require('node:child_process');
 const { writeFile } = require('node:fs/promises');
 const { registerKdeGlobalShortcut } = require('./kde-global-shortcut');
+const { attemptInsert, availableBackends, describeInsertMechanism } = require('./insert');
 const {
   app,
   BrowserWindow,
@@ -173,7 +173,7 @@ function appStatus() {
     requestedShortcut: PRIMARY_SHORTCUT,
     shortcutRegistered: Boolean(activeShortcut),
     platform: process.platform,
-    pasteSupport: process.platform === 'win32' ? 'native' : 'best-effort'
+    insertSupport: process.platform === 'win32' ? 'native' : 'best-effort'
   };
 }
 
@@ -225,45 +225,10 @@ function createTray() {
   rebuildTrayMenu();
 }
 
-function spawnDetached(command, args) {
-  return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      detached: true,
-      windowsHide: true,
-      stdio: 'ignore'
-    });
-    child.once('error', () => resolve(false));
-    child.once('spawn', () => {
-      child.unref();
-      resolve(true);
-    });
-  });
-}
-
-async function pasteIntoPreviousApp() {
-  if (process.platform === 'win32') {
-    const script = [
-      'Add-Type -AssemblyName System.Windows.Forms',
-      'Start-Sleep -Milliseconds 90',
-      '[System.Windows.Forms.SendKeys]::SendWait("^v")'
-    ].join('; ');
-    return spawnDetached('powershell.exe', [
-      '-NoProfile', '-NonInteractive', '-STA', '-WindowStyle', 'Hidden', '-Command', script
-    ]);
-  }
-
-  if (process.platform === 'darwin') {
-    return spawnDetached('osascript', [
-      '-e', 'delay 0.09',
-      '-e', 'tell application "System Events" to keystroke "v" using command down'
-    ]);
-  }
-
-  if (process.env.XDG_SESSION_TYPE === 'wayland') {
-    return spawnDetached('wtype', ['-M', 'ctrl', 'v', '-m', 'ctrl']);
-  }
-
-  return spawnDetached('xdotool', ['key', '--clearmodifiers', 'ctrl+v']);
+function logInsertMechanism() {
+  return describeInsertMechanism()
+    .then(({ level, message }) => (level === 'warn' ? console.warn(message) : console.log(message)))
+    .catch((error) => console.error(error));
 }
 
 function isValidCharacter(value) {
@@ -276,11 +241,24 @@ ipcMain.handle('character:choose', async (_event, payload) => {
   }
 
   await clipboard.writeText(payload.character);
-  if (!payload.paste) return { ok: true, mode: 'copied' };
+  if (!payload.insert) return { ok: true, mode: 'copied' };
 
+  // Check whether any insert tool is installed before hiding. If none is, keep
+  // the window visible so the renderer can tell the user to paste manually.
+  if ((await availableBackends()).length === 0) {
+    const reason = 'No insert tool installed. On KDE Wayland, install ydotool for auto-insert.';
+    console.warn(`UniFind: auto-insert unavailable; character copied to clipboard. ${reason}`);
+    return { ok: true, mode: 'copied', reason };
+  }
+
+  // Hide first so keyboard focus returns to the previously active window before
+  // the paste keystroke is delivered, then attempt the insert.
   mainWindow.hide();
-  const pasteStarted = await pasteIntoPreviousApp();
-  return { ok: true, mode: pasteStarted ? 'pasted' : 'copied' };
+  const result = await attemptInsert();
+  if (result.pasted) return { ok: true, mode: 'pasted', backend: result.backend };
+
+  console.warn(`UniFind: ${result.reason}`);
+  return { ok: true, mode: 'copied', reason: result.reason };
 });
 
 ipcMain.on('popup:hide', () => mainWindow?.hide());
@@ -302,6 +280,7 @@ app.whenReady().then(() => {
   }
 
   registerShortcut().then(rebuildTrayMenu).catch((error) => console.error(error));
+  logInsertMechanism().catch((error) => console.error(error));
   createTray();
 
   if (!process.argv.includes('--hidden')) {
